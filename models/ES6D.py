@@ -85,7 +85,7 @@ class get_loss(nn.Module):
     def __init__(self, dataset, scoring_weight=0.01, loss_type = "GADD", train = True):
 
         super(get_loss, self).__init__()
-        self.prim_groups = dataset.prim_groups  # [obj_i:[gi:tensor[3, n]]]
+        # self.prim_groups = dataset.prim_groups  # [obj_i:[gi:tensor[3, n]]]
         self.sym_list = dataset.get_sym_list()
         self.scoring_weight = scoring_weight
         self.loss_type = loss_type
@@ -181,68 +181,68 @@ class get_loss(nn.Module):
                 t_tar = gt_t[i].view(1, 3).repeat(num_valid, 1).contiguous()  # [nv, 3]
 
 
-                if self.loss_type == "GADD":
+                # if self.loss_type == "GADD":
 
-                    # group
-                    obj_grps = self.prim_groups[cls_ids[i]]
-                    add_ij = torch.zeros((len(obj_grps), num_valid)).cuda()
+                #     # group
+                #     obj_grps = self.prim_groups[cls_ids[i]]
+                #     add_ij = torch.zeros((len(obj_grps), num_valid)).cuda()
 
-                    for j, grp in enumerate(obj_grps):
-                        _, num_p = grp.size()
-                        grp = grp.cuda()
-                        grp = grp.view(1, 3, num_p).repeat(num_valid, 1, 1)
+                #     for j, grp in enumerate(obj_grps):
+                #         _, num_p = grp.size()
+                #         grp = grp.cuda()
+                #         grp = grp.view(1, 3, num_p).repeat(num_valid, 1, 1)
 
-                        npt = pt.permute(1, 0).contiguous().unsqueeze(dim=2).repeat(1, 1, num_p)  # [nv, 3, np]
-                        ntt = t_tar.unsqueeze(dim=2).repeat(1, 1, num_p).contiguous()  # [nv, 3, np]
-
-
-                        pred = torch.bmm(R_pre, grp) + npt  #
-
-                        # pred = torch.bmm(R_pre, grp) + ntt  # rotation only
-
-                        # pred = torch.bmm(R_tar, grp) + npt  # translation only
-
-                        targ = torch.bmm(R_tar, grp) + ntt  # [nv, 3, np]
-
-                        pred = pred.unsqueeze(dim=1).repeat(1, num_p, 1, 1).contiguous()  # [nv, np, 3, np]
-                        targ = targ.permute(0, 2, 1).unsqueeze(dim=3).repeat(1, 1, 1, num_p).contiguous()  # [nv, np, 3, np]
-                        min_dist, _ = torch.min(torch.norm(pred - targ, dim=2), dim=2)  # [nv, np]
-
-                        if len(obj_grps) == 3 and j == 2:
-                            # print('category 2')
-                            ########################
-                            add_ij[j] = torch.max(min_dist, dim=1)[0]  # [nv]
-                        else:
-                            add_ij[j] = torch.mean(min_dist, dim=1)  # [nv]
-
-                    # ADD(S)
-                    if len(obj_grps) == 3 and obj_grps[2].size()[1] > 1:
-                        add_i = torch.max(add_ij, dim=0)[0]  # [nv]
-                    else:
-                        add_i = torch.mean(add_ij, dim=0)  # [nv]
+                #         npt = pt.permute(1, 0).contiguous().unsqueeze(dim=2).repeat(1, 1, num_p)  # [nv, 3, np]
+                #         ntt = t_tar.unsqueeze(dim=2).repeat(1, 1, num_p).contiguous()  # [nv, 3, np]
 
 
-                    # 指定训练物体
-                    if cls_ids[i] + 1 in self.select_id:
+                #         pred = torch.bmm(R_pre, grp) + npt  #
 
-                        # print('training {}'.format(cls_ids[i] + 1))
+                #         # pred = torch.bmm(R_pre, grp) + ntt  # rotation only
 
-                        sub_value[i] = torch.mean(add_i)
+                #         # pred = torch.bmm(R_tar, grp) + npt  # translation only
 
-                        sub_loss_value[i] = torch.mean(add_i * ps - self.scoring_weight * torch.log(ps))
-                        # print('sub_loss_value {}: {}'.format(i, sub_loss_value[i]))
+                #         targ = torch.bmm(R_tar, grp) + ntt  # [nv, 3, np]
 
-                    else:
+                #         pred = pred.unsqueeze(dim=1).repeat(1, num_p, 1, 1).contiguous()  # [nv, np, 3, np]
+                #         targ = targ.permute(0, 2, 1).unsqueeze(dim=3).repeat(1, 1, 1, num_p).contiguous()  # [nv, np, 3, np]
+                #         min_dist, _ = torch.min(torch.norm(pred - targ, dim=2), dim=2)  # [nv, np]
 
-                        sub_value[i] = torch.mean(add_i) * 0
+                #         if len(obj_grps) == 3 and j == 2:
+                #             # print('category 2')
+                #             ########################
+                #             add_ij[j] = torch.max(min_dist, dim=1)[0]  # [nv]
+                #         else:
+                #             add_ij[j] = torch.mean(min_dist, dim=1)  # [nv]
 
-                        sub_loss_value[i] = torch.mean(add_i * ps - self.scoring_weight * torch.log(ps)) * 0
+                #     # ADD(S)
+                #     if len(obj_grps) == 3 and obj_grps[2].size()[1] > 1:
+                #         add_i = torch.max(add_ij, dim=0)[0]  # [nv]
+                #     else:
+                #         add_i = torch.mean(add_ij, dim=0)  # [nv]
 
 
-                elif self.loss_type == "ADD":
+                #     # 指定训练物体
+                #     if cls_ids[i] + 1 in self.select_id:
+
+                #         # print('training {}'.format(cls_ids[i] + 1))
+
+                #         sub_value[i] = torch.mean(add_i)
+
+                #         sub_loss_value[i] = torch.mean(add_i * ps - self.scoring_weight * torch.log(ps))
+                #         # print('sub_loss_value {}: {}'.format(i, sub_loss_value[i]))
+
+                #     else:
+
+                #         sub_value[i] = torch.mean(add_i) * 0
+
+                #         sub_loss_value[i] = torch.mean(add_i * ps - self.scoring_weight * torch.log(ps)) * 0
+
+
+                if self.loss_type == "ADD":
 
                     # model
-                    _, _, num_points = model_xyz.shape
+                    _, num_points, _ = model_xyz.shape
                     # print("model_xyz:", model_xyz[i].shape)
 
                     md_xyz = torch.Tensor(model_xyz[i]).cuda().view(1, 3, num_points).repeat(num_valid, 1, 1)
@@ -320,46 +320,8 @@ class get_loss(nn.Module):
                 t_tar = gt_t[i].view(1, 3).repeat(num_valid, 1).contiguous()  # [nv, 3]
 
 
-                #  if self.loss_type == "GADD":
-
-                obj_grps = self.prim_groups[cls_ids[i]]
-
-                add_ij = torch.zeros((len(obj_grps), num_valid)).cuda()
-
-                for j, grp in enumerate(obj_grps):
-                    _, num_p = grp.size()
-                    grp = grp.cuda()
-                    grp = grp.view(1, 3, num_p).repeat(num_valid, 1, 1)
-
-                    npt = pt.permute(1, 0).contiguous().unsqueeze(dim=2).repeat(1, 1, num_p)  # [nv, 3, np]
-                    ntt = t_tar.unsqueeze(dim=2).repeat(1, 1, num_p).contiguous()  # [nv, 3, np]
-                    pred = torch.bmm(R_pre, grp) + npt  # [nv, 3, np]
-                    targ = torch.bmm(R_tar, grp) + ntt  # [nv, 3, np]
-
-                    pred = pred.unsqueeze(dim=1).repeat(1, num_p, 1, 1).contiguous()  # [nv, np, 3, np]
-                    targ = targ.permute(0, 2, 1).unsqueeze(dim=3).repeat(1, 1, 1,
-                                                                         num_p).contiguous()  # [nv, np, 3, np]
-                    min_dist, _ = torch.min(torch.norm(pred - targ, dim=2), dim=2)  # [nv, np]
-
-                    if len(obj_grps) == 3 and j == 2:
-                        ########################
-                        add_ij[j] = torch.max(min_dist, dim=1)[0]  # [nv]
-                    else:
-                        add_ij[j] = torch.mean(min_dist, dim=1)  # [nv]
-
-                # ADD(S)
-                if len(obj_grps) == 3 and obj_grps[2].size()[1] > 1:
-                    add_i = torch.max(add_ij, dim=0)[0]  # [nv]
-
-                else:
-                    add_i = torch.mean(add_ij, dim=0)  # [nv]
-
-
-                sub_value[i] = torch.mean(add_i)
-                sub_loss_value[i] = torch.mean(add_i * ps - self.scoring_weight * torch.log(ps))
-
-                _, _, num_points = model_xyz.shape
-                # print("model_xyz:", model_xyz[i].shape)
+                _, num_points, _ = model_xyz.shape
+                print("model_xyz:", model_xyz.shape)
 
                 md_xyz = torch.Tensor(model_xyz[i]).cuda().view(1, 3, num_points).repeat(num_valid, 1, 1)
 
@@ -382,11 +344,11 @@ class get_loss(nn.Module):
             add = torch.mean(add_sub_value)
             add_loss = torch.mean(add_sub_loss_value)
 
-            gadd = torch.mean(gadd_sub_value)
-            gadd_loss = torch.mean(gadd_sub_loss_value)
+            # gadd = torch.mean(gadd_sub_value)
+            # gadd_loss = torch.mean(gadd_sub_loss_value)
 
 
-            loss_dict = {'add_loss': add_loss.item(), 'add': add.item(), 'gadd_loss': gadd_loss.item(), 'gadd': gadd.item()}
+            loss_dict = {'add_loss': add_loss.item(), 'add': add.item()}
             # loss_dict = {'loss': add_loss.item(), 'add': add.item()}
 
             return add_loss, loss_dict

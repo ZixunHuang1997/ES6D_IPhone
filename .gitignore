@@ -2,3 +2,6 @@
 /datasets/tless/test_primesense
 /datasets/tless/train_pbr
 /bop_toolkit-master
+/eval/eval*
+/datasets/dttd_iphone/DTTD_IPhone_Dataset
+/experiments/*
