@@ -116,8 +116,12 @@ class DTTDDataset(data.Dataset):
         mask_z = xyz_map[:, :, 2].flatten()[sample2D][:, np.newaxis]
         mask_xyz = np.concatenate((mask_x, mask_y, mask_z), axis=1)
         mean_xyz = mask_xyz.mean(axis=0).reshape((3))
-
+        # print(xyz_map)
         xyz_map = (xyz_map - mean_xyz) * mask_crop[:, :, np.newaxis]
+        print(T_gt, mean_xyz)
+        T_gt = T_gt - mean_xyz
+        print(T_gt)
+        # print(xyz_map.shape, T_gt.shape, mean_xyz.shape)
         # xyz_map = (xyz_map) * mask_crop[:, :, np.newaxis]
 
         # add noise for pointcloud and model points
@@ -128,6 +132,7 @@ class DTTDDataset(data.Dataset):
         
         xyz_map = np.transpose(xyz_map, (2,0,1))
         img_crop = np.transpose(img_crop, (2,0,1))
+        print(img_crop.shape, xyz_map.shape)
 
         return {
                "xyz": torch.from_numpy(xyz_map.astype(np.float32)), \
@@ -282,7 +287,7 @@ def binary_search(sorted_list, target):
 
 
 if __name__ == "__main__":
-    dataset = DTTDDataset(root="./DTTD_IPhone_Dataset/root", mode="test", config_path="./dataset_config")
+    dataset = DTTDDataset(root="./datasets/dttd_iphone/DTTD_IPhone_Dataset/root", mode="test", config_path="./datasets/dttd_iphone/dataset_config")
     dt = dataset[2]
     print("rgb shape: ", dt["rgb"].size())
     print("xyzmap shape: ", dt["xyz"].size())

@@ -19,7 +19,8 @@ import torch.utils.data.distributed
 from torch.utils.tensorboard import SummaryWriter
 
 # from datasets.tless.tless_dataset import PoseDataset as pose_dataset
-from datasets.dttd_iphone.dataset import DTTDDataset as dttd_dataset
+#from datasets.dttd_iphone.dataset import DTTDDataset as dttd_dataset
+from datasets.ycb.ycb_dataset import PoseDataset as ycb_dataset
 
 from models import ES6D as pose_net
 
@@ -67,13 +68,13 @@ def main():
 
     opt.gpu_number = torch.cuda.device_count()
 
-    if opt.dataset == 'dttd':
-        opt.num_objects = 20  # number of object classes in the dataset
+    if opt.dataset == 'ycb':
+        opt.num_objects = 21  # number of object classes in the dataset
         opt.num_points = 1024
-        opt.dataset_root = './datasets/dttd_iphone'
+        opt.dataset_root = './datasets/ycb'
 
-        opt.outf = 'experiments/dttd-iphone/{}/{}/model/'.format(opt.loss_type, opt.experiment)  # folder to save trained model
-        opt.log_dir = 'experiments/dttd-iphone/{}/{}/log/'.format(opt.loss_type, opt.experiment)  # folder to save logs ########
+        opt.outf = 'experiments/ycb/{}/{}/model/'.format(opt.loss_type, opt.experiment)  # folder to save trained model
+        opt.log_dir = 'experiments/ycb/{}/{}/log/'.format(opt.loss_type, opt.experiment)  # folder to save logs ########
 
         if os.path.isdir(opt.outf) == False:
             os.makedirs(opt.outf)
@@ -129,7 +130,8 @@ def per_processor(gpu, opt):
 
     # init DDP dataloader
     # dataset = pose_dataset('train', opt.num_points, opt.dataset_root, True, opt.noise_trans)
-    dataset = dttd_dataset('./datasets/dttd_iphone/DTTD_IPhone_Dataset/root', mode='train', config_path='./datasets/dttd_iphone/dataset_config')
+    # dataset = dttd_dataset('./datasets/dttd_iphone/DTTD_IPhone_Dataset/root', mode='train', config_path='./datasets/dttd_iphone/dataset_config')
+    dataset = ycb_dataset(mode ='train', num_pt = opt.num_points, root = opt.dataset_root, add_noise=False, noise_trans=opt.noise_trans)
 
 
     sampler = torch.utils.data.distributed.DistributedSampler(dataset)
